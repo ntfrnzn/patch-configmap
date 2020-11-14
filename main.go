@@ -77,12 +77,14 @@ func main() {
 
 	props.Set("spark.eventLog.dir", "s3://wave-spark-history/")
 	//properties["spark.eventLog.dir"] = "s3://wave-spark-history/"
-	props.Set("oops", "yikes!")
+	props.Set("yeah", "no")
 
 	// copy := cm.DeepCopy()
 
 	var patchBuilder strings.Builder
-	patchBuilder.WriteString("{\"data\":{\"spark.properties\": \"")
+	patchBuilder.WriteString("[{ \"op\": \"replace\", \"path\": \"/data\", \"value\": ")
+
+	patchBuilder.WriteString("{\"spark.properties\": \"")
 	for k, v := range props.Map() {
 		patchBuilder.Write([]byte( k))
 		patchBuilder.WriteString( "=")
@@ -90,7 +92,7 @@ func main() {
 		patchBuilder.WriteString( "\\n")
 		fmt.Println(v)
 	}
-	patchBuilder.WriteString("\"}}")
+	patchBuilder.WriteString("\"}}]")
 
 	// patch := patchValue{
 	// 	Op:    "replace",
@@ -109,7 +111,7 @@ func main() {
 	// fmt.Println(xpatchString)
 	patchData := []byte(patchString)
 	_, err = clientset.CoreV1().ConfigMaps("default").Patch(
-		ctx, *configmap, types.MergePatchType, patchData, metav1.PatchOptions{},
+		ctx, *configmap, types.JSONPatchType, patchData, metav1.PatchOptions{},
 	)
 
 	if err != nil {
